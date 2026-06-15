@@ -1,1 +1,434 @@
- https://pastebin.com/raw/XXXX
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>County Tracker</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 30px;
+    }
+
+    .header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .header p {
+      font-size: 1.1em;
+      opacity: 0.95;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.4em;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    .location-info {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+    }
+
+    .location-info p {
+      margin: 8px 0;
+      color: #555;
+      font-size: 0.95em;
+    }
+
+    .location-info strong {
+      color: #333;
+    }
+
+    .button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 1em;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .button:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .button.secondary {
+      background: #764ba2;
+    }
+
+    .button.secondary:hover {
+      background: #6a3f91;
+    }
+
+    .status {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .counties-list {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .county-item {
+      background: #f8f9fa;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border-left: 4px solid #667eea;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .county-item strong {
+      color: #333;
+    }
+
+    .county-item .date {
+      font-size: 0.85em;
+      color: #888;
+    }
+
+    .county-item .delete-btn {
+      background: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: background 0.3s;
+    }
+
+    .county-item .delete-btn:hover {
+      background: #c82333;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    .stat {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .stat-number {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+
+    .empty-state {
+      text-align: center;
+      color: #999;
+      padding: 30px 20px;
+    }
+
+    .empty-state p {
+      font-size: 1.1em;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📋 County Tracker</h1>
+      <p>Track every county you visit</p>
+    </div>
+
+    <!-- Current Location Card -->
+    <div class="card">
+      <h2>Current Location</h2>
+      <div id="locationStatus" class="status loading" style="display: none;"></div>
+      <div id="currentLocation" class="location-info" style="display: none;">
+        <p><strong>County:</strong> <span id="countyName">-</span></p>
+        <p><strong>State:</strong> <span id="stateName">-</span></p>
+        <p><strong>Latitude:</strong> <span id="latitude">-</span></p>
+        <p><strong>Longitude:</strong> <span id="longitude">-</span></p>
+        <p><strong>Accuracy:</strong> <span id="accuracy">-</span> meters</p>
+      </div>
+      <div id="noLocation" class="empty-state">
+        <p>📍 Enable location to get started</p>
+      </div>
+      <button class="button" onclick="app.getLocation()">Get Location</button>
+      <button class="button secondary" onclick="app.startTracking()">Start Auto-Tracking</button>
+    </div>
+
+    <!-- Statistics Card -->
+    <div class="card">
+      <h2>Statistics</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-number" id="totalCounties">0</div>
+          <div class="stat-label">Counties Visited</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number" id="totalStates">0</div>
+          <div class="stat-label">States Visited</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Counties List Card -->
+    <div class="card">
+      <h2>Counties Visited</h2>
+      <div id="countriesList" class="counties-list">
+        <div class="empty-state">
+          <p>No counties yet. Start tracking!</p>
+        </div>
+      </div>
+      <button class="button secondary" onclick="app.clearAll()">Clear All</button>
+    </div>
+  </div>
+
+  <script>
+    const app = {
+      counties: [],
+      tracking: false,
+      watchId: null,
+
+      init() {
+        this.loadCounties();
+        this.updateUI();
+      },
+
+      loadCounties() {
+        const saved = localStorage.getItem('counties');
+        this.counties = saved ? JSON.parse(saved) : [];
+      },
+
+      saveCounties() {
+        localStorage.setItem('counties', JSON.stringify(this.counties));
+      },
+
+      async getLocation() {
+        const status = document.getElementById('locationStatus');
+        status.style.display = 'block';
+        status.className = 'status loading';
+        status.textContent = '📍 Getting location...';
+
+        if (!navigator.geolocation) {
+          status.className = 'status error';
+          status.textContent = '❌ Geolocation not supported';
+          return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            await this.processLocation(latitude, longitude, accuracy);
+            status.className = 'status success';
+            status.textContent = '✅ Location updated';
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
+          },
+          (error) => {
+            status.className = 'status error';
+            status.textContent = `❌ ${error.message}`;
+          }
+        );
+      },
+
+      async processLocation(latitude, longitude, accuracy) {
+        try {
+          // Call Census API to get county info
+          const response = await fetch(
+            `https://geocoding.geo.census.gov/geocoder/geographies/coordinates?x=${longitude}&y=${latitude}&result_type=geographies&format=json`
+          );
+          const data = await response.json();
+
+          if (data.result && data.result.geographies) {
+            const counties = data.result.geographies['Counties'];
+            if (counties && counties.length > 0) {
+              const county = counties[0];
+              const countyName = county.NAME.split(' County')[0];
+              const stateName = data.result.geographies['States'][0].NAME;
+
+              // Update current location display
+              document.getElementById('currentLocation').style.display = 'block';
+              document.getElementById('noLocation').style.display = 'none';
+              document.getElementById('countyName').textContent = countyName;
+              document.getElementById('stateName').textContent = stateName;
+              document.getElementById('latitude').textContent = latitude.toFixed(4);
+              document.getElementById('longitude').textContent = longitude.toFixed(4);
+              document.getElementById('accuracy').textContent = Math.round(accuracy);
+
+              // Add to visited counties
+              this.addCounty(countyName, stateName, latitude, longitude);
+            }
+          }
+        } catch (error) {
+          console.error('Error getting county:', error);
+          document.getElementById('locationStatus').textContent = '⚠️ Could not identify county';
+        }
+      },
+
+      addCounty(countyName, stateName, latitude, longitude) {
+        const key = `${countyName}, ${stateName}`;
+        const existing = this.counties.find(c => c.key === key);
+
+        if (!existing) {
+          this.counties.push({
+            key,
+            countyName,
+            stateName,
+            latitude,
+            longitude,
+            visitedDate: new Date().toLocaleDateString()
+          });
+          this.saveCounties();
+          this.updateUI();
+        }
+      },
+
+      removeCounty(key) {
+        this.counties = this.counties.filter(c => c.key !== key);
+        this.saveCounties();
+        this.updateUI();
+      },
+
+      clearAll() {
+        if (confirm('Are you sure? This will delete all counties.')) {
+          this.counties = [];
+          this.saveCounties();
+          this.updateUI();
+        }
+      },
+
+      startTracking() {
+        if (this.tracking) {
+          navigator.geolocation.clearWatch(this.watchId);
+          this.tracking = false;
+          alert('Tracking stopped');
+          return;
+        }
+
+        if (!navigator.geolocation) {
+          alert('Geolocation not supported');
+          return;
+        }
+
+        this.tracking = true;
+        const status = document.getElementById('locationStatus');
+        status.style.display = 'block';
+        status.className = 'status loading';
+        status.textContent = '📍 Tracking enabled';
+
+        this.watchId = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude, accuracy } = position.coords;
+            this.processLocation(latitude, longitude, accuracy);
+          },
+          (error) => {
+            status.className = 'status error';
+            status.textContent = `❌ ${error.message}`;
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      },
+
+      updateUI() {
+        // Update statistics
+        const uniqueStates = new Set(this.counties.map(c => c.stateName));
+        document.getElementById('totalCounties').textContent = this.counties.length;
+        document.getElementById('totalStates').textContent = uniqueStates.size;
+
+        // Update counties list
+        const list = document.getElementById('countriesList');
+        if (this.counties.length === 0) {
+          list.innerHTML = '<div class="empty-state"><p>No counties yet. Start tracking!</p></div>';
+        } else {
+          list.innerHTML = this.counties.map(c => `
+            <div class="county-item">
+              <div>
+                <strong>${c.countyName}, ${c.stateName}</strong>
+                <div class="date">${c.visitedDate}</div>
+              </div>
+              <button class="delete-btn" onclick="app.removeCounty('${c.key}')">Delete</button>
+            </div>
+          `).join('');
+        }
+      }
+    };
+
+    // Initialize app when page loads
+    window.addEventListener('load', () => app.init());
+  </script>
+</body>
+</html>
